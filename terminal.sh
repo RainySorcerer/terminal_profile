@@ -102,9 +102,19 @@ configure_terminal_font() {
     fi
 }
 
+# Install Base16 Shell for theming
+install_base16_shell() {
+    echo "Installing Base16 Shell..."
+    bash -c "$(wget -qO- https://git.io/vQgMr)"
+    echo "Base16 Shell installed. Setting Everforest Dark Hard theme as default..."
+    eval "~/.config/base16-shell/base16-everforest" # Default theme
+    echo "Base16 Shell default theme set to Everforest Dark Hard."
+}
+
 # Main script execution
 distro=$(detect_distro)
 install_fish "$distro"
 install_oh_my_posh
 install_nerd_fonts
 configure_terminal_font
+install_base16_shell
