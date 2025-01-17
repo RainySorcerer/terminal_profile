@@ -56,6 +56,15 @@ install_fish() {
     fi
 }
 
+# Install Oh My Posh
+install_oh_my_posh() {
+    echo "Installing Oh My Posh..."
+    sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+    sudo chmod +x /usr/local/bin/oh-my-posh
+    echo "Oh My Posh installed successfully!"
+}
+
 # Main script execution
 distro=$(detect_distro)
 install_fish "$distro"
+install_oh_my_posh
