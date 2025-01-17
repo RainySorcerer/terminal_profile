@@ -62,6 +62,19 @@ install_oh_my_posh() {
     sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
     sudo chmod +x /usr/local/bin/oh-my-posh
     echo "Oh My Posh installed successfully!"
+
+    echo "Setting up Oh My Posh themes..."
+    mkdir -p "$HOME/.poshthemes"
+    wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O "$HOME/.poshthemes/themes.zip"
+    unzip "$HOME/.poshthemes/themes.zip" -d "$HOME/.poshthemes"
+    chmod u+rw "$HOME/.poshthemes"/*.json
+    rm "$HOME/.poshthemes/themes.zip"
+    echo "Oh My Posh themes installed successfully!"
+
+    echo "Configuring Fish shell to use Oh My Posh..."
+    mkdir -p "$HOME/.config/fish"
+    echo "oh-my-posh init fish --config $HOME/.poshthemes/montys.omp.json | source" >> "$HOME/.config/fish/config.fish"
+    echo "Fish shell configured to use Oh My Posh with Montys theme."
 }
 
 # Install Nerd Fonts (FiraCode)
