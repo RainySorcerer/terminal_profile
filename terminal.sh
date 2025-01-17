@@ -1,127 +1,132 @@
 #!/bin/bash
 
+# Define color variables for output
+PURPLE='\033[0;35m'
+BLUE='\033[0;34m'
+NORMAL='\033[0m'
+RED='\033[0;31m'
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Detect the Linux distribution
-detect_distro() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        echo "$ID"
-    elif command_exists lsb_release; then
-        lsb_release -si | tr '[:upper:]' '[:lower:]'
-    elif [ -f /etc/debian_version ]; then
-        echo "debian"
-    elif [ -f /etc/redhat-release ]; then
-        echo "fedora"
-    elif [ -f /etc/arch-release ]; then
-        echo "arch"
+# Function to abort the script with a message
+abort() {
+    echo -e "${RED}[ERROR] $1${NORMAL}"
+    exit 1
+}
+
+# Function to install required packages based on the detected distribution
+install_required_packages() {
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        if command_exists apt; then
+            echo -e "${PURPLE}Ubuntu/Debian Based Distro Detected${NORMAL}"
+            sudo apt update -y || abort "Failed to update package list!"
+            echo -e "${BLUE}>> Installing Required Packages...${NORMAL}"
+            sudo apt install -y fish unzip wget || abort "Failed to install required packages."
+
+        elif command_exists dnf; then
+            echo -e "${PURPLE}Fedora Based Distro Detected${NORMAL}"
+            echo -e "${BLUE}>> Installing Required Packages...${NORMAL}"
+            sudo dnf install -y fish unzip wget || abort "Failed to install required packages."
+
+        elif command_exists pacman; then
+            echo -e "${PURPLE}Arch or Arch Based Distro Detected${NORMAL}"
+            sudo pacman -Syyu --needed --noconfirm || abort "Failed to update package list!"
+            echo -e "${BLUE}>> Installing Required Packages...${NORMAL}"
+            sudo pacman -Sy --noconfirm fish unzip wget || abort "Failed to install required packages."
+
+        else
+            abort "No supported package manager found."
+        fi
+
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "${PURPLE}macOS Detected${NORMAL}"
+        echo -e "${BLUE}>> Installing Required Packages...${NORMAL}"
+        brew install fish unzip wget || abort "Failed to install required packages."
     else
-        echo "unknown"
+        abort "Unsupported OS type: $OSTYPE"
     fi
 }
 
-# Install Fish shell based on detected distribution
+# Function to install Fish shell
 install_fish() {
-    case "$1" in
-        ubuntu|debian)
-            echo "Ubuntu/Debian detected. Installing Fish shell..."
-            sudo apt update && sudo apt install -y fish
-            ;;
-        fedora|centos|rhel)
-            echo "Fedora/RHEL detected. Installing Fish shell..."
-            sudo dnf install -y fish
-            ;;
-        arch)
-            echo "Arch Linux detected. Installing Fish shell..."
-            sudo pacman -Sy --noconfirm fish
-            ;;
-        *)
-            echo "Unsupported or unknown distribution. Please install Fish manually."
-            exit 1
-            ;;
-    esac
-
+    echo "Installing Fish shell..."
     if command_exists fish; then
-        echo "Fish shell installed successfully!"
-        echo "Changing the default shell to Fish..."
-        chsh -s /usr/bin/fish
+        echo "Fish shell is already installed."
     else
-        echo "Failed to install Fish shell. Please check your package manager and try again."
-        exit 1
+        install_required_packages
+        echo "Fish shell installed successfully! Changing the default shell..."
+        chsh -s "$(command -v fish)"
     fi
 }
 
-# Install Oh My Posh
+# Function to install Oh My Posh
 install_oh_my_posh() {
     echo "Installing Oh My Posh..."
-    sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+    sudo wget -q https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
     sudo chmod +x /usr/local/bin/oh-my-posh
-    echo "Oh My Posh installed successfully!"
 
     echo "Setting up Oh My Posh themes..."
     mkdir -p "$HOME/.poshthemes"
-    wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O "$HOME/.poshthemes/themes.zip"
-    unzip "$HOME/.poshthemes/themes.zip" -d "$HOME/.poshthemes"
+    wget -q https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O "$HOME/.poshthemes/themes.zip"
+    
+    # Unzip without prompting for overwriting files
+    unzip -o -q "$HOME/.poshthemes/themes.zip" -d "$HOME/.poshthemes"
+    
     chmod u+rw "$HOME/.poshthemes"/*.json
     rm "$HOME/.poshthemes/themes.zip"
-    echo "Oh My Posh themes installed successfully!"
 
     echo "Configuring Fish shell to use Oh My Posh..."
     mkdir -p "$HOME/.config/fish"
     echo "oh-my-posh init fish --config $HOME/.poshthemes/montys.omp.json | source" >> "$HOME/.config/fish/config.fish"
-    echo "Fish shell configured to use Oh My Posh with Montys theme."
+    echo "Fish shell configured with Oh My Posh."
 }
 
-# Install Nerd Fonts (FiraCode)
+# Function to install Nerd Fonts (FiraCode)
 install_nerd_fonts() {
     echo "Installing Nerd Fonts (FiraCode)..."
     mkdir -p "$HOME/.local/share/fonts"
-    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip -O "$HOME/Downloads/firacode.zip"
-    unzip "$HOME/Downloads/firacode.zip" -d "$HOME/.local/share/fonts"
+    wget -q https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip -O "$HOME/Downloads/firacode.zip"
+    unzip -o -q "$HOME/Downloads/firacode.zip" -d "$HOME/.local/share/fonts"
     fc-cache -f -v
     echo "Nerd Fonts (FiraCode) installed successfully!"
 }
 
-# Configure terminal font
+# Function to configure terminal font
 configure_terminal_font() {
-    echo "Configuring terminal to use FiraCode Nerd Font Retina size 11..."
+    echo " Configuring terminal to use FiraCode Nerd Font Retina size 11..."
     if command_exists gsettings; then
-        PROFILE=$(gsettings get org.gnome.Terminal.ProfilesList default | tr -d "'")
-        gsettings set "org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$PROFILE/" font 'FiraCode Nerd Font Retina 11'
-        echo "GNOME Terminal configured successfully."
-    elif command_exists konsoleprofile; then
-        konsoleprofile "Font=FiraCode Nerd Font Retina,11,-1,5,50,0,0,0,0,0"
-        echo "KDE Konsole configured successfully."
+        PROFILE=$(gsettings get org.gnome.desktop.interface font-name)
+        gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Retina 11'
+        echo "Terminal font configured successfully."
     else
-        echo "Automatic terminal configuration is not supported for your terminal. Please set FiraCode Nerd Font Retina size 11 manually in your terminal settings."
+        echo "gsettings command not found. Please configure the terminal font manually."
     fi
 }
 
-# Install Base16 Shell for theming
+# Function to install Base16 Shell
 install_base16_shell() {
     echo "Installing Base16 Shell..."
-    bash -c "$(wget -qO- https://git.io/vQgMr)"
-    echo "Base16 Shell installed. Setting Everforest Dark Hard theme as default..."
-    eval "~/.config/base16-shell/base16-everforest" # Default theme
-    echo "Base16 Shell default theme set to Everforest Dark Hard."
-}
-
-# Prompt user to logout and notify about GNOME terminal configuration
-prompt_logout() {
-    echo "GNOME Terminal does not immediately load Fish shell as the default shell after installation."
-    echo "Logging out now... Please log back in to apply changes."
-    sleep 3
-    gnome-session-quit --logout --no-prompt
+    if [ ! -d "$HOME/.config/base16-shell" ]; then
+        git clone https://github.com/chriskempson/base16-shell.git "$HOME/.config/base16-shell" || abort "Failed to clone Base16 Shell repository."
+        echo "Base16 Shell installed successfully!"
+    else
+        echo "Base16 Shell is already installed, skipping..."
+    fi
 }
 
 # Main script execution
-distro=$(detect_distro)
-install_fish "$distro"
+install_fish
 install_oh_my_posh
 install_nerd_fonts
 configure_terminal_font
 install_base16_shell
-prompt_logout
+
+echo -e "${BLUE}All installations and configurations completed successfully!${NORMAL}"
+
+# Logout automatically after completion
+echo "Logging out in 5 seconds..."
+sleep 5
+gnome-session-quit --logout --no-prompt
