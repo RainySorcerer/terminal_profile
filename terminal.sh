@@ -64,7 +64,18 @@ install_oh_my_posh() {
     echo "Oh My Posh installed successfully!"
 }
 
+# Install Nerd Fonts (FiraCode)
+install_nerd_fonts() {
+    echo "Installing Nerd Fonts (FiraCode)..."
+    mkdir -p "$HOME/.local/share/fonts"
+    wget https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip -O "$HOME/Downloads/firacode.zip"
+    unzip "$HOME/Downloads/firacode.zip" -d "$HOME/.local/share/fonts"
+    fc-cache -f -v
+    echo "Nerd Fonts (FiraCode) installed successfully!"
+}
+
 # Main script execution
 distro=$(detect_distro)
 install_fish "$distro"
 install_oh_my_posh
+install_nerd_fonts
