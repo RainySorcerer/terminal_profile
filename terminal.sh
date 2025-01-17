@@ -74,8 +74,24 @@ install_nerd_fonts() {
     echo "Nerd Fonts (FiraCode) installed successfully!"
 }
 
+# Configure terminal font
+configure_terminal_font() {
+    echo "Configuring terminal to use FiraCode Nerd Font Retina size 11..."
+    if command_exists gsettings; then
+        PROFILE=$(gsettings get org.gnome.Terminal.ProfilesList default | tr -d "'")
+        gsettings set "org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:$PROFILE/" font 'FiraCode Nerd Font Retina 11'
+        echo "GNOME Terminal configured successfully."
+    elif command_exists konsoleprofile; then
+        konsoleprofile "Font=FiraCode Nerd Font Retina,11,-1,5,50,0,0,0,0,0"
+        echo "KDE Konsole configured successfully."
+    else
+        echo "Automatic terminal configuration is not supported for your terminal. Please set FiraCode Nerd Font Retina size 11 manually in your terminal settings."
+    fi
+}
+
 # Main script execution
 distro=$(detect_distro)
 install_fish "$distro"
 install_oh_my_posh
 install_nerd_fonts
+configure_terminal_font
