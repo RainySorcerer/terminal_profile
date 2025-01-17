@@ -48,8 +48,6 @@ install_fish() {
         echo "Fish shell installed successfully!"
         echo "Changing the default shell to Fish..."
         chsh -s /usr/bin/fish
-        echo "Switching to Fish shell..."
-        fish
     else
         echo "Failed to install Fish shell. Please check your package manager and try again."
         exit 1
@@ -111,6 +109,14 @@ install_base16_shell() {
     echo "Base16 Shell default theme set to Everforest Dark Hard."
 }
 
+# Prompt user to logout and notify about GNOME terminal configuration
+prompt_logout() {
+    echo "GNOME Terminal does not immediately load Fish shell as the default shell after installation."
+    echo "Logging out now... Please log back in to apply changes."
+    sleep 3
+    gnome-session-quit --logout --no-prompt
+}
+
 # Main script execution
 distro=$(detect_distro)
 install_fish "$distro"
@@ -118,3 +124,4 @@ install_oh_my_posh
 install_nerd_fonts
 configure_terminal_font
 install_base16_shell
+prompt_logout
