@@ -126,7 +126,29 @@ install_base16_shell
 
 echo -e "${BLUE}All installations and configurations completed successfully!${NORMAL}"
 
-# Logout automatically after completion
+# Notify the user about the impending logout
 echo "Logging out in 5 seconds..."
 sleep 5
-gnome-session-quit --logout --no-prompt
+
+# Check if GNOME session manager is available
+if command -v gnome-session-quit &>/dev/null; then
+    gnome-session-quit --logout --no-prompt
+else
+    echo "GNOME session manager not found. Logging out manually..."
+
+    # Determine the session type and log out accordingly
+    case "$XDG_SESSION_TYPE" in
+        x11)
+            echo "Detected X11 session. Forcing logout by terminating user processes..."
+            pkill -KILL -u "$USER"
+            ;;
+        wayland)
+            echo "Detected Wayland session. Logging out gracefully..."
+            loginctl terminate-user "$USER"
+            ;;
+        *)
+            echo "Could not determine session type. Please log out manually."
+            exit 1
+            ;;
+    esac
+fi
